@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from CMIF_model import CMIF_VIO
+from FCN_model import FCN_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -70,7 +70,7 @@ def main():
 
     # Model initialization
     # model = DeepVIO(args)
-    model = CMIF_VIO(args)
+    model = FCN_VIO(args)
 
     model.load_state_dict(torch.load(args.model))
     print('load model %s'%args.model)
