@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from FCN_model import FCN_VIO
+from SmallCMIF_model import SmallCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -70,7 +70,7 @@ def main():
 
     # Model initialization
     # model = DeepVIO(args)
-    model = FCN_VIO(args)
+    model = SmallCMIF_VIO(args)
 
     model.load_state_dict(torch.load(args.model))
     print('load model %s'%args.model)
@@ -92,7 +92,16 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Interrupted — cleaning up GPU memory…")
+    finally:
+        torch.cuda.empty_cache()
+        for p in torch.multiprocessing.active_children():
+            p.terminate()
+            p.join()
+        print("Cleanup complete. Exiting safely.")
 
 
 

@@ -4,7 +4,7 @@ from thop import profile
 from utils.kitti_eval import data_partition
 
 from CMIF_model import CMIF_VIO
-from FCN_model import FCN_VIO
+from SmallCMIF_model import SmallCMIF_VIO
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--data_dir', type=str, default='/nfs/turbo/coe-hunseok/mingyuy/KITTI_odometry', help='path to the dataset')
@@ -35,11 +35,11 @@ args = parser.parse_args()
 
 
 # load model
-model = CMIF_VIO(args)
-model_name = "CMIF_VIO"
+# model = CMIF_VIO(args)
+# model_name = "CMIF_VIO"
 
-# model = FCN_VIO(args)
-# model_name = "FCN_VIO"
+model = SmallCMIF_VIO(args)
+model_name = "SmallCMIF_VIO"
 
 print("Model:", model_name)
 

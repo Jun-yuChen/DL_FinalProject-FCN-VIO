@@ -91,7 +91,16 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Interrupted — cleaning up GPU memory…")
+    finally:
+        torch.cuda.empty_cache()
+        for p in torch.multiprocessing.active_children():
+            p.terminate()
+            p.join()
+        print("Cleanup complete. Exiting safely.")
 
 
 

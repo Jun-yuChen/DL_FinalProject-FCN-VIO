@@ -47,7 +47,7 @@ parser.add_argument('--lr_joint', type=float, default=5e-5, help='learning rate 
 parser.add_argument('--lr_fine', type=float, default=1e-6, help='learning rate for finetuning stage')
 parser.add_argument('--eta', type=float, default=0.05, help='exponential decay factor for temperature')
 parser.add_argument('--temp_init', type=float, default=5, help='initial temperature for gumbel-softmax')
-parser.add_argument('--Lambda', type=float, default=3e-5, help='penalty factor for the visual encoder usage')
+parser.add_argument('--Lambda', type=float, default=0, help='penalty factor for the visual encoder usage')
 
 parser.add_argument('--experiment_name', type=str, default='experiment', help='experiment name')
 parser.add_argument('--optimizer', type=str, default='Adam', help='type of optimizer [Adam, SGD]')
@@ -259,7 +259,16 @@ def main():
     print(message)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Interrupted — cleaning up GPU memory…")
+    finally:
+        torch.cuda.empty_cache()
+        for p in torch.multiprocessing.active_children():
+            p.terminate()
+            p.join()
+        print("Cleanup complete. Exiting safely.")
 
 
 
