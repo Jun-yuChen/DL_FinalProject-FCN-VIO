@@ -8,8 +8,8 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from SmallCMIF_model import SmallCMIF_VIO
-from CMIF_model import CMIF_VIO
+from models.SmallCMIF_model import SmallCMIF_VIO
+from models.CMIF_model import CMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -19,7 +19,7 @@ import math
 from torch.optim.lr_scheduler import StepLR
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--data_dir', type=str, default='/nfs/turbo/coe-hunseok/mingyuy/KITTI_odometry', help='path to the dataset')
+parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/data', help='path to the dataset')
 parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 parser.add_argument('--save_dir', type=str, default='./results', help='path to save the result')
 
@@ -53,7 +53,7 @@ parser.add_argument('--distill_gamma', type=float, default=0.3, help='weight for
 parser.add_argument('--weight_decay', type=float, default=5e-6, help='weight decay for the optimizer')
 parser.add_argument('--batch_size', type=int, default=16, help='batch size')
 parser.add_argument('--seq_len', type=int, default=11, help='sequence length for LSTM')
-parser.add_argument('--workers', type=int, default=4, help='number of workers')
+parser.add_argument('--workers', type=int, default=1, help='number of workers')
 
 parser.add_argument('--epochs_visual', type=int, default=20, help='number of epochs for strong visual encoder distillation')
 parser.add_argument('--epochs_joint', type=int, default=60, help='number of epochs for joint training')

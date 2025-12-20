@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from CMIF_model import CMIF_VIO
+from models.CMIF_model import CMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester

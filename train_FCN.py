@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from FCN_model import FCN_VIO
+from SmallCMIF_model import SmallCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -14,7 +14,7 @@ import numpy as np
 import math
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--data_dir', type=str, default='/nfs/turbo/coe-hunseok/mingyuy/KITTI_odometry', help='path to the dataset')
+parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/data', help='path to the dataset')
 parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 parser.add_argument('--save_dir', type=str, default='./results', help='path to save the result')
 
@@ -181,7 +181,7 @@ def main():
     tester = KITTI_tester(args)
 
     # Model initialization
-    model = FCN_VIO(args)
+    model = SmallCMIF_VIO(args)
 
     # Continual training or not
     if args.pretrain is not None:

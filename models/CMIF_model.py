@@ -221,7 +221,7 @@ class CMIF_VIO(nn.Module):
 
         poses = torch.cat(poses, dim=1)
 
-        return poses, fv, hc
+        return poses, hc
 
 
 def initialization(net):

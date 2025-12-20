@@ -6,46 +6,7 @@ import numpy as np
 from torch.distributions.utils import broadcast_all, probs_to_logits, logits_to_probs, lazy_property, clamp_probs
 import torch.nn.functional as F
 
-
-def conv(batchNorm, in_planes, out_planes, kernel_size=3, stride=1, dropout=0):
-    if batchNorm:
-        return nn.Sequential(
-            nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=(kernel_size - 1) // 2, bias=False),
-            nn.BatchNorm2d(out_planes),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(dropout)  # , inplace=True)
-        )
-    else:
-        return nn.Sequential(
-            nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=(kernel_size - 1) // 2, bias=True),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(dropout)  # , inplace=True)
-        )
-    
-
-class ResidualBlock(nn.Module):
-    """Residual block with optional 1x1 conv for channel matching"""
-    def __init__(self, batchNorm, in_planes, out_planes, kernel_size=3, stride=1, dropout=0):
-        super(ResidualBlock, self).__init__()
-        self.conv = conv(batchNorm, in_planes, out_planes, kernel_size, stride, dropout)
-        
-        # 1x1 conv for matching dimensions when needed
-        self.match_dims = (in_planes != out_planes) or (stride != 1)
-        if self.match_dims:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_planes) if batchNorm else nn.Identity()
-            )
-    
-    def forward(self, x):
-        residual = self.conv(x)
-        
-        if self.match_dims:
-            x = self.shortcut(x)
-        
-        out = residual + x
-        return out
-    
+from Visual_encoder import Visual_encoder
 
 # The inertial encoder for raw imu data
 class Inertial_encoder(nn.Module):
@@ -81,37 +42,7 @@ class Encoder(nn.Module):
     def __init__(self, opt):
         super(Encoder, self).__init__()
 
-        base = 1
-
-        # Helper function to scale channels
-        def c(channels):
-            return max(1, int(channels / base))
-        
-        # CNN with residual connections
-        self.conv1 = conv(True, 6, c(64), kernel_size=7, stride=2, dropout=0.2)
-        
-        self.conv2   = ResidualBlock(True, c(64), c(128), kernel_size=5, stride=2, dropout=0.2)
-        
-        self.conv3   = ResidualBlock(True, c(128), c(256), kernel_size=5, stride=2, dropout=0.2)
-        self.conv3_1 = ResidualBlock(True, c(256), c(256), kernel_size=3, stride=1, dropout=0.2)
-        
-        self.conv4   = ResidualBlock(True, c(256), c(512), kernel_size=3, stride=2, dropout=0.2)
-        self.conv4_1 = ResidualBlock(True, c(512), c(512), kernel_size=3, stride=1, dropout=0.2)
-        
-        # self.conv5   = ResidualBlock(True, c(512), c(512), kernel_size=3, stride=2, dropout=0.2)
-        # self.conv5_1 = ResidualBlock(True, c(512), c(512), kernel_size=3, stride=1, dropout=0.2)
-        
-        self.conv6   = ResidualBlock(True, c(512), c(1024), kernel_size=3, stride=2, dropout=0.5)
-        
-        # Compute the shape based on image size
-        # __tmp = Variable(torch.zeros(1, 6, opt.img_w, opt.img_h))
-        # __tmp = self.encode_image(__tmp)
-
-        # print(int(np.prod(__tmp.size())))
-        
-        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.visual_head = nn.Linear(c(1024), opt.v_f_len)
-        
+        self.visual_encoder = Visual_encoder(opt)        
         self.inertial_encoder = Inertial_encoder(opt)
 
     def forward(self, img, imu):
@@ -132,10 +63,8 @@ class Encoder(nn.Module):
 
         # image CNN
         v = v.view(batch_size * seq_len, v.size(2), v.size(3), v.size(4))
-        v = self.encode_image(v)  # (B*seq, C, H, W)
-        v = self.global_avg_pool(v)               # (B*seq, C, 1, 1)
+        v = self.visual_encoder(v)
         v = v.view(batch_size, seq_len, -1)  # (batch, seq_len, fv)
-        v = self.visual_head(v)  # (batch, seq_len, 512)
         
         # IMU CNN
         imu = torch.cat([imu[:, i * 10:i * 10 + 11, :].unsqueeze(1) for i in range(seq_len)], dim=1)
@@ -145,22 +74,6 @@ class Encoder(nn.Module):
         # print(f'shape of inertial encoder output: {imu.shape}')
 
         return v, imu
-
-    def encode_image(self, x):
-        out_conv1 = self.conv1(x)
-        out_conv2 = self.conv2(out_conv1)
-
-        out_conv3 = self.conv3(out_conv2)
-        out_conv3_1 = self.conv3_1(out_conv3)
-
-        out_conv4 = self.conv4(out_conv3_1)
-        out_conv4_1 = self.conv4_1(out_conv4)
-
-        # out_conv5 = self.conv5(out_conv4_1)
-        # out_conv5_1 = self.conv5_1(out_conv5)
-
-        out_conv6 = self.conv6(out_conv4_1)
-        return out_conv6
 
 
 class CMIM(nn.Module):
