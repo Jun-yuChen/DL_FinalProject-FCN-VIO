@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import numpy as np
+from torch.autograd import Variable
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=0, dropout=0.3, batchNorm=True):
     if batchNorm:
@@ -42,21 +44,38 @@ class Conv_layers(nn.Module):
 
 class Visual_encoder(nn.Module):
     def __init__(self, opt):
-        super(Visual_encoder, self).__init__()
+        super().__init__()
 
         self.conv_layers = Conv_layers()
 
-        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.visual_head = nn.Linear(512, opt.v_f_len)
+        # compute feature dimension safely
+        with torch.no_grad():
+            tmp = torch.zeros(1, 6, opt.img_w, opt.img_h)
+            tmp = self.conv_layers(tmp)
+            feat_dim = tmp.flatten(1).size(1)
+
+        self.visual_head = nn.Linear(feat_dim, opt.v_f_len)
 
     def forward(self, img_pair):
         feat = self.conv_layers(img_pair)
 
-        feat = self.global_avg_pool(feat)   # [B, 512, 1, 1]
-        feat = feat.flatten(1)              # [B, 512]      
+        feat = feat.view(feat.size(0), -1)
         feat = self.visual_head(feat)
 
         return feat
+    
+    def load_conv_layers(self, path):
+        ckpt = torch.load(path, map_location="cpu")
+
+        # extract only conv_layers.*
+        conv_state_dict = {
+            k.replace("conv_layers.", ""): v
+            for k, v in ckpt.items()
+            if k.startswith("conv_layers.")
+        }
+
+        self.conv_layers.load_state_dict(conv_state_dict)
+
     
 
 class Visual_encoder_for_Distill(nn.Module):

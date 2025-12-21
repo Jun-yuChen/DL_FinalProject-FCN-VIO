@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from SmallCMIF_model import SmallCMIF_VIO
+from models.SmallCMIF_model import SmallCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -18,8 +18,8 @@ parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/dat
 parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 parser.add_argument('--save_dir', type=str, default='./results', help='path to save the result')
 
-parser.add_argument('--train_seq', type=list, default=['00', '01', '02', '04', '06', '08', '09'], help='sequences for training')
-parser.add_argument('--val_seq', type=list, default=['05', '07', '10'], help='sequences for validation')
+parser.add_argument('--train_seq', type=list, default=['00', '01', '02', '04', '06', '08'], help='sequences for training')
+parser.add_argument('--val_seq', type=list, default=['09'], help='sequences for validation')
 parser.add_argument('--seed', type=int, default=0, help='random seed')
 
 parser.add_argument('--img_w', type=int, default=512, help='image width')
@@ -52,7 +52,7 @@ parser.add_argument('--Lambda', type=float, default=0, help='penalty factor for 
 parser.add_argument('--experiment_name', type=str, default='experiment', help='experiment name')
 parser.add_argument('--optimizer', type=str, default='Adam', help='type of optimizer [Adam, SGD]')
 
-parser.add_argument('--pretrain_flownet',type=str, default='./pretrain_models/flownets_bn_EPE2.459.pth.tar', help='whether to use the pre-trained flownet')
+parser.add_argument('--pretrain_visual_encoder_conv',type=str, default=None, help='path to the pre-trained conv layer in visual encoder')
 parser.add_argument('--pretrain', type=str, default=None, help='path to the pretrained model')
 parser.add_argument('--hflip', default=False, action='store_true', help='whether to use horizonal flipping as augmentation')
 parser.add_argument('--color', default=False, action='store_true', help='whether to use color augmentations')
@@ -192,13 +192,9 @@ def main():
         print('Training from scratch')
         logger.info('Training from scratch')
     
-    # Use the pre-trained flownet or not
-    if args.pretrain_flownet and args.pretrain is None:
-        pretrained_w = torch.load(args.pretrain_flownet, map_location='cpu')
-        model_dict = model.Encoders_net.state_dict()
-        update_dict = {k: v for k, v in pretrained_w['state_dict'].items() if k in model_dict}
-        model_dict.update(update_dict)
-        model.Encoders_net.load_state_dict(model_dict)
+    # Use the pre-trained conv layers in visula encoder or not
+    if args.pretrain_visual_encoder_conv is not None  and  args.pretrain is None:
+        model.Encoders_net.visual_encoder.load_conv_layers(args.pretrain_visual_encoder_conv)
 
     # Feed model to GPU
     model.cuda(gpu_ids[0])
@@ -233,26 +229,25 @@ def main():
         print(message)
         logger.info(message)
         
-        if ep > args.epochs_warmup+args.epochs_joint:
-            # Evaluate the model
-            print('Evaluating the model')
-            logger.info('Evaluating the model')
-            with torch.no_grad(): 
-                model.eval()
-                errors = tester.eval(model, num_gpu=len(gpu_ids))
-        
-            t_rel = np.mean([errors[i]['t_rel'] for i in range(len(errors))])
-            r_rel = np.mean([errors[i]['r_rel'] for i in range(len(errors))])
-            t_rmse = np.mean([errors[i]['t_rmse'] for i in range(len(errors))])
-            r_rmse = np.mean([errors[i]['r_rmse'] for i in range(len(errors))])
+        # Evaluate the model
+        print('Evaluating the model')
+        logger.info('Evaluating the model')
+        with torch.no_grad(): 
+            model.eval()
+            errors = tester.eval(model, num_gpu=len(gpu_ids))
+    
+        t_rel = np.mean([errors[i]['t_rel'] for i in range(len(errors))])
+        r_rel = np.mean([errors[i]['r_rel'] for i in range(len(errors))])
+        t_rmse = np.mean([errors[i]['t_rmse'] for i in range(len(errors))])
+        r_rmse = np.mean([errors[i]['r_rmse'] for i in range(len(errors))])
 
-            if t_rel < best:
-                best = t_rel 
-                torch.save(model.module.state_dict(), f'{checkpoints_dir}/best_{best:.2f}.pth')
-        
-            message = f'Epoch {ep} evaluation finished , t_rel: {t_rel:.4f}, r_rel: {r_rel:.4f}, t_rmse: {t_rmse:.4f}, r_rmse: {r_rmse:.4f}, best t_rel: {best:.4f}'
-            logger.info(message)
-            print(message)
+        if t_rel < best:
+            best = t_rel 
+            torch.save(model.module.state_dict(), f'{checkpoints_dir}/best_{best:.2f}.pth')
+    
+        message = f'Epoch {ep} evaluation finished , t_rel: {t_rel:.4f}, r_rel: {r_rel:.4f}, t_rmse: {t_rmse:.4f}, r_rmse: {r_rmse:.4f}, best t_rel: {best:.4f}'
+        logger.info(message)
+        print(message)
     
     message = f'Training finished, best t_rel: {best:.4f}'
     logger.info(message)

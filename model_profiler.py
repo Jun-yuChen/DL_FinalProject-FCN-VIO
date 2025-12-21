@@ -3,8 +3,8 @@ import torch
 from thop import profile
 from utils.kitti_eval import data_partition
 
-from CMIF_model import CMIF_VIO
-from SmallCMIF_model import SmallCMIF_VIO
+from models.CMIF_model import CMIF_VIO
+from models.SmallCMIF_model import SmallCMIF_VIO
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/data', help='path to the dataset')

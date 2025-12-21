@@ -78,7 +78,7 @@ class KITTI_tester():
             x_in = image_seq.unsqueeze(0).repeat(num_gpu,1,1,1,1).cuda()
             i_in = imu_seq.unsqueeze(0).repeat(num_gpu,1,1).cuda()
             with torch.no_grad():
-                pose, v_feature, hc = net(x_in, i_in, hc=hc)
+                pose, hc = net(x_in, i_in, hc=hc)
             pose_list.append(pose[0,:,:].detach().cpu().numpy())
 
         pose_est = np.vstack(pose_list)  
