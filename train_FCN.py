@@ -5,8 +5,10 @@ import logging
 from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
+import torchvision.transforms.functional as TF
+from PIL import Image
 
-from models.SmallCMIF_model import SmallCMIF_VIO
+from models.TinyCMIF_model import TinyCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -56,6 +58,7 @@ parser.add_argument('--pretrain_visual_encoder_conv',type=str, default=None, hel
 parser.add_argument('--pretrain', type=str, default=None, help='path to the pretrained model')
 parser.add_argument('--hflip', default=False, action='store_true', help='whether to use horizonal flipping as augmentation')
 parser.add_argument('--color', default=False, action='store_true', help='whether to use color augmentations')
+parser.add_argument('--use_grey_img', action='store_true', help='use grayscale images')
 
 parser.add_argument('--print_frequency', type=int, default=10, help='print frequency for loss values')
 parser.add_argument('--weighted', default=False, action='store_true', help='whether to use weighted sum')
@@ -76,7 +79,22 @@ def update_status(ep, args, model):
 
     return lr
 
-def train(model, optimizer, train_loader, logger, ep, weighted=False):
+
+def rgb_to_gray(x):
+    """
+    Convert RGB images to grayscale using luminosity method.
+    
+    Args:
+        x: (B, seq_len, 3, H, W) tensor of RGB images
+    
+    Returns:
+        (B, seq_len, 1, H, W) tensor of grayscale images
+    """
+    r, g, b = x[:, :, 0:1], x[:, :, 1:2], x[:, :, 2:3]
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def train(model, optimizer, train_loader, logger, ep, args, weighted=False):
     
     mse_losses = []
     data_len = len(train_loader)
@@ -87,6 +105,10 @@ def train(model, optimizer, train_loader, logger, ep, weighted=False):
         imus = imus.cuda().float()
         gts = gts.cuda().float() 
         weight = weight.cuda().float()
+
+        # Convert to grayscale if specified
+        if args.use_grey_img:
+            imgs = rgb_to_gray(imgs)
 
         optimizer.zero_grad()
                 
@@ -118,7 +140,6 @@ def train(model, optimizer, train_loader, logger, ep, weighted=False):
 
 
 def main():
-
     # Create Dir
     experiment_dir = Path('./results')
     experiment_dir.mkdir_p()
@@ -181,7 +202,7 @@ def main():
     tester = KITTI_tester(args)
 
     # Model initialization
-    model = SmallCMIF_VIO(args)
+    model = TinyCMIF_VIO(args)
 
     # Continual training or not
     if args.pretrain is not None:
@@ -221,7 +242,7 @@ def main():
         logger.info(message)
 
         model.train()
-        avg_pose_loss = train(model, optimizer, train_loader, logger, ep)
+        avg_pose_loss = train(model, optimizer, train_loader, logger, ep, args)
         
         # Save the model after training
         torch.save(model.module.state_dict(), f'{checkpoints_dir}/{ep:003}.pth')

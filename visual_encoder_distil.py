@@ -13,7 +13,7 @@ from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from models.FlowNet_encoder import FlowNet_Encoder
-from models.Visual_encoder import Visual_encoder_for_Distill
+from models.Tiny_Visual_encoder import Visual_encoder_for_Distill
 
 
 def visual_encoder_distillation(student_encoder, teacher_encoder, optimizer, train_loader, 
@@ -170,6 +170,8 @@ def main():
     
     student = Visual_encoder_for_Distill().to(device)
     # Don't wrap student in DataParallel for single GPU
+
+    student.load_from_rgb_checkpoint("./results/1219_visual_encoder_distillation/checkpoints/best_0.0047.pth")
 
     # ============================================================
     #    Load dataset

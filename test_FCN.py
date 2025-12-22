@@ -6,7 +6,7 @@ from path import Path
 from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
-from models.SmallCMIF_model import SmallCMIF_VIO
+from models.TinyCMIF_model import TinyCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -18,6 +18,7 @@ parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/dat
 parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 parser.add_argument('--save_dir', type=str, default='./results', help='path to save the result')
 parser.add_argument('--seq_len', type=int, default=11, help='sequence length for LSTM')
+parser.add_argument('--use_grey_img', default=False, action='store_true', help='use grayscale images')
 
 parser.add_argument('--train_seq', type=list, default=['00', '01', '02', '04', '06', '08', '09'], help='sequences for training')
 parser.add_argument('--val_seq', type=list, default=['05', '07', '10'], help='sequences for validation')
@@ -70,7 +71,7 @@ def main():
 
     # Model initialization
     # model = DeepVIO(args)
-    model = SmallCMIF_VIO(args)
+    model = TinyCMIF_VIO(args)
 
     model.load_state_dict(torch.load(args.model))
     print('load model %s'%args.model)

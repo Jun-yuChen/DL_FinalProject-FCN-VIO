@@ -61,7 +61,7 @@ def parse_log_file(log_file_path):
 
 def main():
     # Example usage
-    log_file = './results/1220_SmallCMF_VIO_pretrain_conv/logs/train_1220_SmallCMF_VIO_pretrain_conv.txt'  # Replace with your log file path
+    log_file = './results/1221_TinyCMIF_VIO_pretrain_conv/logs/train_1221_TinyCMIF_VIO_pretrain_conv.txt'  # Replace with your log file path
     
     training_df, validation_df = parse_log_file(log_file)
     

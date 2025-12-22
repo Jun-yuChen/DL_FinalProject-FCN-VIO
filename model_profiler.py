@@ -5,12 +5,14 @@ from utils.kitti_eval import data_partition
 
 from models.CMIF_model import CMIF_VIO
 from models.SmallCMIF_model import SmallCMIF_VIO
+from models.TinyCMIF_model import TinyCMIF_VIO
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--data_dir', type=str, default='../Visual-Selective-VIO/data', help='path to the dataset')
 parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 parser.add_argument('--save_dir', type=str, default='./results', help='path to save the result')
 parser.add_argument('--seq_len', type=int, default=11, help='sequence length for LSTM')
+parser.add_argument('--use_grey_img', action='store_true', help='use grayscale images')
 
 parser.add_argument('--train_seq', type=list, default=['00', '01', '02', '04', '06', '08', '09'], help='sequences for training')
 parser.add_argument('--val_seq', type=list, default=['05', '07', '10'], help='sequences for validation')
@@ -38,8 +40,8 @@ args = parser.parse_args()
 # model = CMIF_VIO(args)
 # model_name = "CMIF_VIO"
 
-model = SmallCMIF_VIO(args)
-model_name = "SmallCMIF_VIO"
+model = TinyCMIF_VIO(args)
+model_name = "TinyCMIF_VIO"
 
 print("Model:", model_name)
 
@@ -56,6 +58,19 @@ seq = '07'
 dataset = data_partition(args, seq)
 print("Number of samples:", len(dataset))
 
+def rgb_pair_to_gray(x):
+    """
+    x: (B, 6, H, W)  -> two RGB images concatenated on channel dim
+    return: (B, 2, H, W) -> two grayscale images concatenated on channel dim
+    """
+    r1, g1, b1 = x[:, 0:1], x[:, 1:2], x[:, 2:3]
+    gray1 = 0.299 * r1 + 0.587 * g1 + 0.114 * b1
+
+    r2, g2, b2 = x[:, 3:4], x[:, 4:5], x[:, 5:6]
+    gray2 = 0.299 * r2 + 0.587 * g2 + 0.114 * b2
+
+    return torch.cat([gray1, gray2], dim=1)
+
 # Access one sample
 image_seq, imu_seq, gt_seq = dataset[0]
 print(image_seq.shape, imu_seq.shape, gt_seq.shape)
@@ -64,8 +79,11 @@ print(image_seq.shape, imu_seq.shape, gt_seq.shape)
 # Test FLOPs
 # ==============================================
 
-img_pairs = image_seq.unsqueeze(0).to(DEVICE)  # [1, seq_len, 3, H, W]
+img_pairs = image_seq.unsqueeze(0).to(DEVICE)  # [1, seq_len, 6, H, W]
 imus = imu_seq.unsqueeze(0).to(DEVICE)         # [1, T_imu, 6]
+
+if args.use_grey_img:
+    img_pair = rgb_pair_to_gray(img_pairs)
 
 # calculate FLOPs
 input_test = (img_pairs, imus)

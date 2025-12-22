@@ -6,7 +6,7 @@ import numpy as np
 from torch.distributions.utils import broadcast_all, probs_to_logits, logits_to_probs, lazy_property, clamp_probs
 import torch.nn.functional as F
 
-from models.Visual_encoder import Visual_encoder
+from models.Tiny_Visual_encoder import Tiny_Visual_encoder
 
 # The inertial encoder for raw imu data
 class Inertial_encoder(nn.Module):
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
     def __init__(self, opt):
         super(Encoder, self).__init__()
 
-        self.visual_encoder = Visual_encoder(opt)        
+        self.visual_encoder = Tiny_Visual_encoder(opt)        
         self.inertial_encoder = Inertial_encoder(opt)
 
     def forward(self, img, imu):
@@ -137,9 +137,9 @@ class Pose_RNN(nn.Module):
         return pose, hc
 
 
-class SmallCMIF_VIO(nn.Module):
+class TinyCMIF_VIO(nn.Module):
     def __init__(self, opt):
-        super(SmallCMIF_VIO, self).__init__()
+        super().__init__()
 
         self.Encoders_net = Encoder(opt)
         self.CMIM = CMIM(opt)

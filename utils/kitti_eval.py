@@ -48,15 +48,23 @@ class data_partition():
     def __getitem__(self, i):
         image_path_sequence = self.img_paths_list[i]
         image_sequence = []
+
         for img_path in image_path_sequence:
             img_as_img = Image.open(img_path)
+
+            # 🔹 Convert to grayscale if enabled
+            if self.opt.use_grey_img:
+                img_as_img = img_as_img.convert('L')  # 1-channel grayscale
+            
             img_as_img = TF.resize(img_as_img, size=(self.opt.img_h, self.opt.img_w))
             img_as_tensor = TF.to_tensor(img_as_img) - 0.5
             img_as_tensor = img_as_tensor.unsqueeze(0)
             image_sequence.append(img_as_tensor)
+
         image_sequence = torch.cat(image_sequence, 0)
         imu_sequence = torch.FloatTensor(self.imus_list[i])
         gt_sequence = self.poses_list[i][:, :6]
+        
         return image_sequence, imu_sequence, gt_sequence
 
 
