@@ -7,6 +7,7 @@ from utils import custom_transform
 from dataset.KITTI_dataset import KITTI
 
 from models.TinyCMIF_model import TinyCMIF_VIO
+from models.SmallCMIF_model import SmallCMIF_VIO
 
 from collections import defaultdict
 from utils.kitti_eval import KITTI_tester
@@ -70,7 +71,7 @@ def main():
     tester = KITTI_tester(args)
 
     # Model initialization
-    # model = DeepVIO(args)
+    # model = SmallCMIF_VIO(args)
     model = TinyCMIF_VIO(args)
 
     model.load_state_dict(torch.load(args.model))
