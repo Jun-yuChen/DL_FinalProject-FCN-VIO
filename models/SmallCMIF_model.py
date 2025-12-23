@@ -6,7 +6,7 @@ import numpy as np
 from torch.distributions.utils import broadcast_all, probs_to_logits, logits_to_probs, lazy_property, clamp_probs
 import torch.nn.functional as F
 
-from models.Visual_encoder import Visual_encoder
+from models.Small_Visual_encoder import Visual_encoder
 
 # The inertial encoder for raw imu data
 class Inertial_encoder(nn.Module):

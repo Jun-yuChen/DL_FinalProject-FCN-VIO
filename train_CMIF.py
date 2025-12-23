@@ -56,6 +56,7 @@ parser.add_argument('--pretrain_flownet',type=str, default='./pretrain_models/fl
 parser.add_argument('--pretrain', type=str, default=None, help='path to the pretrained model')
 parser.add_argument('--hflip', default=False, action='store_true', help='whether to use horizonal flipping as augmentation')
 parser.add_argument('--color', default=False, action='store_true', help='whether to use color augmentations')
+parser.add_argument('--use_grey_img', action='store_true', help='use grayscale images')
 
 parser.add_argument('--print_frequency', type=int, default=10, help='print frequency for loss values')
 parser.add_argument('--weighted', default=False, action='store_true', help='whether to use weighted sum')

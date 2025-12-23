@@ -1,5 +1,6 @@
 import argparse
 import torch
+import time
 from thop import profile
 from utils.kitti_eval import data_partition
 
@@ -37,11 +38,11 @@ args = parser.parse_args()
 
 
 # load model
-# model = CMIF_VIO(args)
-# model_name = "CMIF_VIO"
+model = CMIF_VIO(args)
+model_name = "CMIF_VIO"
 
-model = TinyCMIF_VIO(args)
-model_name = "TinyCMIF_VIO"
+# model = TinyCMIF_VIO(args)
+# model_name = "TinyCMIF_VIO"
 
 print("Model:", model_name)
 
@@ -72,21 +73,24 @@ def rgb_pair_to_gray(x):
     return torch.cat([gray1, gray2], dim=1)
 
 # Access one sample
-image_seq, imu_seq, gt_seq = dataset[0]
-print(image_seq.shape, imu_seq.shape, gt_seq.shape)
+image_seq, imu_seq, _ = dataset[0]
+
+image_seq = image_seq[0:2]
+
+imus = imu_seq[0:11]
+
+print(image_seq.shape, imus.shape)
+
+image_seq = image_seq.unsqueeze(0).to(DEVICE)  # [1, 2, 3, H, W]
+imus = imus.unsqueeze(0).to(DEVICE)         # [1, 11, 6]
+print(image_seq.shape, imus.shape)
 
 # ==============================================
 # Test FLOPs
 # ==============================================
 
-img_pairs = image_seq.unsqueeze(0).to(DEVICE)  # [1, seq_len, 6, H, W]
-imus = imu_seq.unsqueeze(0).to(DEVICE)         # [1, T_imu, 6]
-
-if args.use_grey_img:
-    img_pair = rgb_pair_to_gray(img_pairs)
-
 # calculate FLOPs
-input_test = (img_pairs, imus)
+input_test = (image_seq, imus)
 flops, params = profile(model, inputs=input_test)
 
 # output
@@ -107,3 +111,56 @@ total_size_KB = (param_size + buffer_size) / 1024.0
 
 # output
 print("Model parameter size ={:.3f} KB".format(total_size_KB))
+
+
+# ==============================================
+# Measure Inference Time
+# ==============================================
+
+model.eval()
+
+# Warm-up runs (important for GPU timing)
+print("\nWarming up...")
+with torch.no_grad():
+    for _ in range(10):
+        _ = model(image_seq, imus)
+
+# Synchronize GPU before timing
+if DEVICE.type == 'cuda':
+    torch.cuda.synchronize()
+
+# Method 1: Using time.perf_counter (CPU time)
+num_iterations = 100
+print(f"\nRunning {num_iterations} iterations...")
+
+start_time = time.perf_counter()
+with torch.no_grad():
+    for _ in range(num_iterations):
+        _ = model(image_seq, imus)
+        if DEVICE.type == 'cuda':
+            torch.cuda.synchronize()  # Wait for GPU operations to complete
+
+end_time = time.perf_counter()
+avg_time_cpu = (end_time - start_time) / num_iterations
+
+# Method 2: Using CUDA Events (more accurate for GPU)
+if DEVICE.type == 'cuda':
+    starter = torch.cuda.Event(enable_timing=True)
+    ender = torch.cuda.Event(enable_timing=True)
+    
+    timings = []
+    with torch.no_grad():
+        for _ in range(num_iterations):
+            starter.record()
+            _ = model(image_seq, imus)
+            ender.record()
+            torch.cuda.synchronize()
+            timings.append(starter.elapsed_time(ender))  # milliseconds
+    
+    avg_time_gpu = sum(timings) / len(timings)
+    
+    print(f"\nInference Time per image pair (CPU timing): {avg_time_cpu*1000:.2f} ms")
+    print(f"Inference Time per image pair (CUDA Events): {avg_time_gpu:.2f} ms")
+
+else:
+    print(f"\nInference Time: {avg_time_cpu*1000:.2f} ms")
