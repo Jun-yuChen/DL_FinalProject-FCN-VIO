@@ -1,10 +1,10 @@
-# TinyCMIF-VIO
+# CMIF-VIO
 
 This repository contains the reproduced and compressed models for [CMIF-VIO: A Novel Cross Modal Interaction Framework for Visual Inertial Odometry](https://ieeexplore.ieee.org/document/10777572). 
 
 + CMIF-VIO (`CMIF_model.py`): the reproduced model of CMIF-VIO.
 + SmallCMIF-VIO (`SmallCMIF_model.py`): a compressed model of CMIF-VIO.
-+ TinyCMIF-VIO(`TinyCMIF_model.py`): a grayscale image version of SmallCMIF-VIO.
++ TinyCMIF-VIO(`TinyCMIF_model.py`): the grayscale image version of SmallCMIF-VIO.
 
 ## Data Preparation
 
@@ -43,14 +43,14 @@ For CMIF-VIO:
     --model 'PATH/TO/YOUR/PRETRAIN/MODELS/pretrained_CMIF.pth' \
     --gpu_ids '0' --experiment_name 'YOUR_EXPERIMENT_NAME'
 
-For SmallCMIF-VIO: Change the model initialize in `test_FCN.py` to SmallCMIF_VIO
+For SmallCMIF-VIO: Change the model initialize in `test_FCN.py` to *SmallCMIF_VIO*
 
     python3 test_FCN.py \
     --data_dir 'PATH/TO/YOUR/KITTI/DATA' \
     --model 'PATH/TO/YOUR/PRETRAIN/MODELS/pretrained_SmallCMIF.pth' \
     --gpu_ids '0' --experiment_name 'YOUR_EXPERIMENT_NAME'
 
-For TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to TinyCMIF_VIO
+For TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to *TinyCMIF_VIO*
 
     python3 test_FCN.py \
     --data_dir 'PATH/TO/YOUR/KITTI/DATA' \
@@ -61,3 +61,17 @@ For TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to TinyCMIF_VIO
 
 The figures and error records will be generated under `./results/pretrained/files`.
 
+## Training Codes
+
++ `train_CMIF.py`: training CMIF-VIO
++ `train_FCN.py`: training SmallCMIF-VIO and TinyCMIF-VIO
+    - SmallCMIF-VIO: Change the model initialize in `test_FCN.py` to *SmallCMIF_VIO*
+    - TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to *TinyCMIF_VIO* and 
+        ```
+        python3 train_FCN.py --use_grey_img
+        ```
+
++ `train_visual_encoder_distil.py`: knowledge distillation for convolution layers in visual encoder
+    - Teacher net: FlowNet visual encoder
+
++ `fuse_weight.py`: fuse old VIO weights and new weights for convolution layers in visual encoder
