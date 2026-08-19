@@ -26,7 +26,7 @@ The IMU data has 6 dimentions:
 
 ## Download pretrainined models
 
-Pretrained FlowNet model is available in [Link]([https://drive.google.com/file/d/1mdhtF40PojJrkZm4VSiVSzuS-nWIqFdx/view?usp=sharing](https://github.com/ClementPinard/FlowNetPytorch/tree/master/weights)).
+Pretrained FlowNet model is available in [Link](https://drive.google.com/file/d/1mdhtF40PojJrkZm4VSiVSzuS-nWIqFdx/view?usp=sharing).
 
 + `flownets_bn_EPE2.459.pth.tar`: FlowNet encoder Please download them and place it under `pretrain_models` directory if you want to use it.
 
