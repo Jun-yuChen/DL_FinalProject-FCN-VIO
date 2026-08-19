@@ -26,13 +26,24 @@ The IMU data has 6 dimentions:
 
 ## Download pretrainined models
 
-Pretrained FlowNet model is available in [Link](https://drive.google.com/file/d/1mdhtF40PojJrkZm4VSiVSzuS-nWIqFdx/view?usp=sharing).
+Pretrained FlowNet model is available in [Link](https://github.com/ClementPinard/FlowNetPytorch/tree/master/weights).
 
 + `flownets_bn_EPE2.459.pth.tar`: FlowNet encoder Please download them and place it under `pretrain_models` directory if you want to use it.
 
-+ `pretrained_CMIF.pth`: CMIF-VIO
-+ `pretrained_SmallCMIF.pth`: SmallCMIF-VIO
-+ `pretrained_TinyCMIF.pth`: TinyCMIF-VIO
+## Training Codes
+
++ `train_CMIF.py`: training CMIF-VIO
++ `train_FCN.py`: training SmallCMIF-VIO and TinyCMIF-VIO
+    - SmallCMIF-VIO: Change the model initialize in `test_FCN.py` to *SmallCMIF_VIO*
+    - TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to *TinyCMIF_VIO* and 
+        ```
+        python3 train_FCN.py --use_grey_img
+        ```
+
++ `train_visual_encoder_distil.py`: knowledge distillation for convolution layers in visual encoder
+    - Teacher net: FlowNet visual encoder
+
++ `fuse_weight.py`: fuse old VIO weights and new weights for convolution layers in visual encoder
 
 ## Test the pretrained model
 
@@ -60,18 +71,3 @@ For TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to *TinyCMIF_VIO*
 
 
 The figures and error records will be generated under `./results/pretrained/files`.
-
-## Training Codes
-
-+ `train_CMIF.py`: training CMIF-VIO
-+ `train_FCN.py`: training SmallCMIF-VIO and TinyCMIF-VIO
-    - SmallCMIF-VIO: Change the model initialize in `test_FCN.py` to *SmallCMIF_VIO*
-    - TinyCMIF-VIO: Change the model initialize in `test_FCN.py` to *TinyCMIF_VIO* and 
-        ```
-        python3 train_FCN.py --use_grey_img
-        ```
-
-+ `train_visual_encoder_distil.py`: knowledge distillation for convolution layers in visual encoder
-    - Teacher net: FlowNet visual encoder
-
-+ `fuse_weight.py`: fuse old VIO weights and new weights for convolution layers in visual encoder
